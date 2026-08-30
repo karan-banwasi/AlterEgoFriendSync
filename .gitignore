@@ -1,0 +1,9 @@
+.cursor/
+.vscode/
+
+*.log
+*.zip
+release/
+
+.DS_Store
+Thumbs.db

@@ -1,0 +1,21 @@
+## Interface: 120100
+## Title: AlterEgo Friend Sync
+## Notes: Friends can opt-in to your character progress for AlterEgo
+## Author: Toddish
+## Version: 0.1.0
+## Dependencies: AlterEgo
+## SavedVariables: AlterEgoFriendSyncDB
+
+Libs\LibStub\LibStub.lua
+Libs\LibSerialize\LibSerialize.lua
+Libs\LibDeflate\LibDeflate.lua
+Libs\ChatThrottleLib\ChatThrottleLib.lua
+
+Boot.lua
+Util.lua
+Snapshot.lua
+Transport.lua
+Protocol.lua
+Injection.lua
+UI.lua
+Core.lua

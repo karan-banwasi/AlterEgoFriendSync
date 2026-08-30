@@ -1,0 +1,8 @@
+ignore:
+  - .cursor
+  - .github
+  - .gitignore
+  - .pkgmeta
+  - .vscode
+  - DEVELOPMENT.md
+  - tests
