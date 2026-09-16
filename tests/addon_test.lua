@@ -174,6 +174,7 @@ local function setup_injection()
 
   addon.db.settings = {view = "mine"}
   addon.db.hiddenOwn = {}
+  addon.db.disabledFriends = {}
 
   local remoteRecord = addon.Snapshot:Trim(AlterEgoDB.global.characters["Player-1"])
   remoteRecord.GUID = "Player-2"
@@ -211,6 +212,24 @@ local function test_injection_views()
     "injection/friend",
     AlterEgoDB.global.characters["Player-2"].enabled == true,
     "friend view hid friend character"
+  )
+
+  AlterEgoDB.global.characters["Player-2"].enabled = false
+  addon.Injection:RefreshView()
+  check(
+    "injection/disabled-persisted",
+    addon.db.disabledFriends["friend#1234"]["Player-2"] == true
+      and AlterEgoDB.global.characters["Player-2"].enabled == false,
+    "friend checkbox choice was not preserved across refresh"
+  )
+
+  AlterEgoDB.global.characters["Player-2"].enabled = true
+  addon.Injection:RefreshView()
+  check(
+    "injection/enabled-persisted",
+    addon.db.disabledFriends["friend#1234"] == nil
+      and AlterEgoDB.global.characters["Player-2"].enabled == true,
+    "re-enabled friend character was not preserved across refresh"
   )
 
   addon.Injection:Shutdown()

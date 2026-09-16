@@ -45,16 +45,17 @@ function addon:InitializeDatabase()
     peers = {},
     injected = {},
     hiddenOwn = {},
+    disabledFriends = {},
   }
   applyDefaults(AlterEgoFriendSyncDB, defaults)
   self.db = AlterEgoFriendSyncDB
   self.db.settings.debug = nil
 
   if self.db.version ~= self.databaseVersion then
-    -- Version 1 has no migrations. Preserve pairings but always recover any
-    -- temporary view mutations when a future schema version is introduced.
+    -- Preserve pairings and recover temporary view mutations when migrating.
     self.db.injected = self.db.injected or {}
     self.db.hiddenOwn = self.db.hiddenOwn or {}
+    self.db.disabledFriends = self.db.disabledFriends or {}
     self.db.version = self.databaseVersion
   end
 end

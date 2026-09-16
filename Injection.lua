@@ -11,6 +11,7 @@ function Injection:Initialize()
   -- view was active, before AlterEgo can persist companion-owned mutations.
   self:RestoreHiddenOwn()
   self:PurgeInjected()
+  self:HookAlterEgoRender()
 end
 
 -- Put back enabled/order for own characters that were hidden in a prior session.
@@ -33,12 +34,54 @@ function Injection:RestoreHiddenOwn()
   addon.db.hiddenOwn = {}
 end
 
+-- Save AlterEgo checkbox choices for currently injected friend characters.
+function Injection:CaptureFriendVisibility()
+  local characters = Util:GetAlterEgoCharacters()
+  if not characters then
+    return
+  end
+  addon.db.disabledFriends = addon.db.disabledFriends or {}
+  for guid, owner in pairs(addon.db.injected or {}) do
+    local character = characters[guid]
+    if character and character._AEFriendOwner == owner then
+      local disabled = addon.db.disabledFriends[owner]
+      if character.enabled == false then
+        disabled = disabled or {}
+        disabled[guid] = true
+        addon.db.disabledFriends[owner] = disabled
+      elseif disabled then
+        disabled[guid] = nil
+        if not next(disabled) then
+          addon.db.disabledFriends[owner] = nil
+        end
+      end
+    end
+  end
+end
+
+-- Observe AlterEgo redraws so checkbox changes are persisted immediately.
+function Injection:HookAlterEgoRender()
+  if self.renderHooked or not hooksecurefunc then
+    return
+  end
+  local AceAddon = LibStub("AceAddon-3.0", true)
+  ---@type {Render: fun(self: table)}|false|nil
+  local core = AceAddon and AceAddon:GetAddon("AlterEgo", true)
+  if core and core.Render then
+    hooksecurefunc(core, "Render", function()
+      self:CaptureFriendVisibility()
+    end)
+    self.renderHooked = true
+  end
+end
+
 -- Remove companion-injected characters from AlterEgo's character table.
 function Injection:PurgeInjected()
   local characters = Util:GetAlterEgoCharacters()
   if not characters then
     return
   end
+  self:CaptureFriendVisibility()
   for guid, owner in pairs(addon.db.injected or {}) do
     local character = characters[guid]
     if character and character._AEFriendOwner == owner then
@@ -121,7 +164,8 @@ function Injection:InjectFriends()
           local copy = Util:CopySerializable(snapshot)
           if copy and copy.info then
             copy.info.name = addon.marker .. (copy.info.name or "?")
-            copy.enabled = true
+            local disabled = addon.db.disabledFriends and addon.db.disabledFriends[key]
+            copy.enabled = not (disabled and disabled[guid])
             copy._AEFriendOwner = key
             addon.db.injected[guid] = key
             characters[guid] = copy

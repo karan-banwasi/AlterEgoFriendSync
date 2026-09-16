@@ -670,6 +670,12 @@ function Protocol:Revoke(query)
   peer.snapshots = {}
   peer.fingerprints = {}
   peer.lastSync = 0
+  if addon.db.disabledFriends then
+    local key = peer.key or Util:NormalizeBattleTag(peer.battleTag)
+    if key then
+      addon.db.disabledFriends[key] = nil
+    end
+  end
   if addon.Injection then
     addon.Injection:RefreshView()
   end
