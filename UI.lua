@@ -42,7 +42,7 @@ function UI:AttachTitlebar()
 
   local button = window:AddTitlebarButton({
     name = "FriendSync",
-    icon = "Interface\\AddOns\\AlterEgo\\Media\\Icon_Characters.blp",
+    icon = "Interface\\AddOns\\AlterEgoFriendSync\\Media\\Icon_FriendSync.tga",
     iconSize = 14,
     tooltipTitle = "AlterEgo Friend Sync",
     tooltipDescription = "Choose whose characters to show, pair friends, or sync now.",
