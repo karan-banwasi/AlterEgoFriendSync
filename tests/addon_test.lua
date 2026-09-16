@@ -77,8 +77,35 @@ local function resetFixture()
           },
           vault = {},
           raids = {},
-          equipment = {{itemLink = "must not be shared"}},
-          currencies = {{id = 1, quantity = 99}},
+          equipment = {
+            {
+              itemName = "Test Helm",
+              itemLink = "|cff0070dd|Hitem:12345::::::::80:::::|h[Test Helm]|h|r",
+              itemQuality = 3,
+              itemLevel = 650,
+              itemTexture = 98765,
+              itemUpgradeTrack = "Champion",
+              itemUpgradeLevel = 4,
+              itemUpgradeMax = 8,
+              itemSlotID = 1,
+              itemSlotName = "Head",
+            },
+          },
+          currencies = {
+            {
+              id = 1,
+              currencyType = "crest",
+              quantity = 99,
+              totalEarned = 120,
+              quantityEarnedThisWeek = 10,
+            },
+          },
+          prey = {
+            questsCompleted = {
+              [91001] = true,
+              [91002] = false,
+            },
+          },
         },
       },
     },
@@ -98,8 +125,24 @@ resetFixture()
 local function test_snapshot_build_own()
   local records = addon.Snapshot:BuildOwn()
   check("snapshot/build", records["Player-1"], "own character was not snapshotted")
-  check("snapshot/build", #records["Player-1"].equipment == 0, "equipment leaked into snapshot")
-  check("snapshot/build", #records["Player-1"].currencies == 0, "currencies leaked into snapshot")
+  check("snapshot/build", records["Player-1"].equipment[1].itemName == "Test Helm", "equipment name missing")
+  check("snapshot/build", records["Player-1"].equipment[1].itemLevel == 650, "equipment item level missing")
+  check("snapshot/build", records["Player-1"].equipment[1].itemSlotID == 1, "equipment slot missing")
+  check(
+    "snapshot/build",
+    records["Player-1"].equipment[1].itemUpgradeTrack == "Champion",
+    "equipment upgrade track missing"
+  )
+  check("snapshot/build", records["Player-1"].currencies[1].id == 1, "currency ID missing")
+  check("snapshot/build", records["Player-1"].currencies[1].quantity == 99, "currency quantity missing")
+  check("snapshot/build", records["Player-1"].currencies[1].totalEarned == 120, "currency total missing")
+  check(
+    "snapshot/build",
+    records["Player-1"].currencies[1].quantityEarnedThisWeek == 10,
+    "weekly currency quantity missing"
+  )
+  check("snapshot/build", records["Player-1"].prey.questsCompleted[91001] == true, "completed prey hunt missing")
+  check("snapshot/build", records["Player-1"].prey.questsCompleted[91002] == false, "prey hunt status missing")
   check("snapshot/build", records["Player-1"].mythicplus.rating == 1234, "core data missing")
 end
 
@@ -108,6 +151,9 @@ local function test_snapshot_trim_sanitizes()
   local malformed = addon.Util:CopySerializable(records["Player-1"])
   malformed.info.level = {}
   malformed.info.ilvl.level = "not-a-number"
+  malformed.currencies[1].quantity = "not-a-number"
+  malformed.prey.questsCompleted.invalid = "yes"
+  malformed.equipment[1].itemLevel = "not-a-number"
   malformed.mythicplus.dungeons = {
     {challengeModeID = {}, affixScores = {{score = "bad", durationSec = {}}}},
   }
@@ -115,6 +161,9 @@ local function test_snapshot_trim_sanitizes()
   local sanitized = addon.Snapshot:Trim(malformed)
   check("snapshot/trim", sanitized.info.level == 0, "malformed level was not sanitized")
   check("snapshot/trim", sanitized.info.ilvl.level == 0, "malformed item level was not sanitized")
+  check("snapshot/trim", sanitized.currencies[1].quantity == 0, "malformed currency was not sanitized")
+  check("snapshot/trim", sanitized.prey.questsCompleted.invalid == nil, "malformed prey hunt was not removed")
+  check("snapshot/trim", sanitized.equipment[1].itemLevel == 0, "malformed equipment was not sanitized")
   check(
     "snapshot/trim",
     sanitized.mythicplus.dungeons[1].challengeModeID == 0,

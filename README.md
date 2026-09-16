@@ -54,13 +54,14 @@ friends are remembered individually across window closes, syncs, and reloads.
 ## Sync behavior
 
 - Syncs after login, when an approved friend comes online, after relevant
-  Mythic+/vault/raid events, every 60 seconds as a backstop, and on demand.
+  Mythic+/vault/raid/prey/equipment events, every 60 seconds as a backstop, and
+  on demand.
 - A key-completion update normally arrives a few seconds after the run ends.
 - Both players must be online at the same time. Last received data remains
   cached and shows its age while the friend is offline.
 - Data is sent point-to-point over Battle.net. Same-realm addon whisper is
   the only fallback. Nothing is broadcast to a guild or party.
-- Equipment, currencies, money, and prey progress are not sent.
+- Money is not sent.
 
 ## Commands
 

@@ -171,6 +171,70 @@ local function trimVault(sourceVault)
   }
 end
 
+local function trimCurrencies(sourceCurrencies)
+  return boundedArray(sourceCurrencies, 100, function(currency)
+    if type(currency) ~= "table" then return nil end
+    return {
+      id = number(currency.id),
+      currencyType = text(currency.currencyType),
+      name = text(currency.name),
+      iconFileID = number(currency.iconFileID),
+      quantity = number(currency.quantity),
+      totalEarned = number(currency.totalEarned),
+      quantityEarnedThisWeek = number(currency.quantityEarnedThisWeek),
+      maxQuantity = number(currency.maxQuantity),
+      maxWeeklyQuantity = number(currency.maxWeeklyQuantity),
+      bagCount = number(currency.bagCount),
+      hasBuff = currency.hasBuff == true,
+      questCompleted = currency.questCompleted == true,
+    }
+  end)
+end
+
+local function trimPrey(sourcePrey)
+  local questsCompleted = {}
+  local count = 0
+  for questID, completed in pairs(tableOrEmpty(tableOrEmpty(sourcePrey).questsCompleted)) do
+    local sanitizedID = number(questID)
+    if sanitizedID > 0 and type(completed) == "boolean" and count < 100 then
+      questsCompleted[sanitizedID] = completed
+      count = count + 1
+    end
+  end
+  return {questsCompleted = questsCompleted}
+end
+
+local function trimEquipment(sourceEquipment)
+  return boundedArray(sourceEquipment, 20, function(item)
+    if type(item) ~= "table" then return nil end
+    return {
+      itemName = text(item.itemName),
+      itemLink = text(item.itemLink),
+      itemQuality = number(item.itemQuality),
+      itemLevel = number(item.itemLevel),
+      itemMinLevel = number(item.itemMinLevel),
+      itemType = text(item.itemType),
+      itemSubType = text(item.itemSubType),
+      itemStackCount = number(item.itemStackCount),
+      itemEquipLoc = text(item.itemEquipLoc),
+      itemTexture = number(item.itemTexture),
+      sellPrice = number(item.sellPrice),
+      classID = number(item.classID),
+      subclassID = number(item.subclassID),
+      bindType = number(item.bindType),
+      expansionID = number(item.expansionID),
+      setID = number(item.setID),
+      isCraftingReagent = item.isCraftingReagent == true,
+      itemUpgradeTrack = text(item.itemUpgradeTrack),
+      itemUpgradeLevel = number(item.itemUpgradeLevel),
+      itemUpgradeMax = number(item.itemUpgradeMax),
+      itemUpgradeColor = text(item.itemUpgradeColor),
+      itemSlotID = number(item.itemSlotID),
+      itemSlotName = text(item.itemSlotName),
+    }
+  end)
+end
+
 -- Extract and santize raid data
 local function trimRaids(sourceRaids)
   sourceRaids = tableOrEmpty(sourceRaids)
@@ -215,12 +279,12 @@ function Snapshot:Trim(character)
     mythicplus = trimMythicplus(character.mythicplus),
     vault = trimVault(character.vault),
     raids = trimRaids(character.raids),
+    currencies = trimCurrencies(character.currencies),
+    prey = trimPrey(character.prey),
+    equipment = trimEquipment(character.equipment),
 
-    -- Empty local-only slices keep AlterEgo's renderer nil-safe without sharing them.
-    equipment = {},
-    currencies = {},
+    -- Money remains local-only.
     money = 0,
-    prey = {questsCompleted = {}},
   }
 end
 
