@@ -4,7 +4,7 @@ addon.name = addonName
 addon.title = C_AddOns.GetAddOnMetadata(addonName, "Title") or addonName
 addon.version = C_AddOns.GetAddOnMetadata(addonName, "Version") or "0"
 addon.protocolVersion = 1
-addon.databaseVersion = 1
+addon.databaseVersion = 2
 addon.prefix = "AEFriend"
 -- icon attached to friends characters names
 addon.marker = "|TInterface\\AddOns\\AlterEgo\\Media\\Icon_Characters.blp:12:12:0:0|t "

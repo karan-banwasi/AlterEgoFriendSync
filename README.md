@@ -48,7 +48,8 @@ Use the Friend Sync button in AlterEgo's titlebar or:
 
 Friend characters have a Battle.net icon before their names. Switching to the
 friend-only view hides your own characters and restores your usual columns
-when you switch views, reload the UI, or log out.
+when you switch views, reload the UI, or log out. Character checkboxes for
+friends are remembered individually across window closes, syncs, and reloads.
 
 ## Sync behavior
 
