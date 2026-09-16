@@ -149,6 +149,16 @@ function Injection:ShouldIncludePeer(key, peer)
   return not selected or selected == "" or selected == key
 end
 
+-- Friend-only character menus should contain only the active friend's rows.
+function Injection:ShouldShowCharacterCheckbox(guid)
+  if addon.db.settings.view ~= "friend" then
+    return true
+  end
+  local owner = addon.db.injected[guid]
+  local peer = owner and addon.db.peers[owner]
+  return peer ~= nil and self:ShouldIncludePeer(owner, peer)
+end
+
 -- Insert approved peer snapshots into AlterEgo, marked as companion-owned.
 function Injection:InjectFriends()
   local characters = Util:GetAlterEgoCharacters()
@@ -182,6 +192,20 @@ function Injection:SetView(view)
     return false
   end
   addon.db.settings.view = view
+  self:RefreshView()
+  return true
+end
+
+-- Switch directly between own characters and one approved friend's characters.
+function Injection:SetCharacterSource(key)
+  if key ~= nil then
+    local peer = addon.db.peers[key]
+    if not peer or not peer.approved then
+      return false
+    end
+  end
+  addon.db.settings.selectedPeer = key
+  addon.db.settings.view = key and "friend" or "mine"
   self:RefreshView()
   return true
 end

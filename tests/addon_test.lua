@@ -187,6 +187,7 @@ local function setup_injection()
   }
 
   loadModule("Injection.lua")
+  loadModule("UI.lua")
 end
 
 local function test_injection_views()
@@ -247,6 +248,53 @@ local function test_injection_views()
     "injection/shutdown",
     ownBeforeView == addon.Snapshot:SerializeStable(AlterEgoDB.global.characters["Player-1"]),
     "view cycle changed the own-character record"
+  )
+
+  check(
+    "injection/source-friend",
+    addon.Injection:SetCharacterSource("friend#1234")
+      and addon.db.settings.view == "friend"
+      and addon.db.settings.selectedPeer == "friend#1234"
+      and AlterEgoDB.global.characters["Player-1"].enabled == false
+      and AlterEgoDB.global.characters["Player-2"],
+    "friend source did not select and show only that friend"
+  )
+  check(
+    "injection/source-friend-checkbox-own",
+    not addon.Injection:ShouldShowCharacterCheckbox("Player-1"),
+    "friend source left an own-character checkbox visible"
+  )
+  check(
+    "injection/source-friend-checkbox-friend",
+    addon.Injection:ShouldShowCharacterCheckbox("Player-2"),
+    "friend source hid the selected friend's checkbox"
+  )
+
+  local characterMenu = {items = {}}
+  function characterMenu:CreateCheckbox(label, isChecked, onClick, value)
+    self.items[#self.items + 1] = {label = label, isChecked = isChecked, onClick = onClick, value = value}
+  end
+  addon.UI:BuildFriendCharacterMenu(characterMenu)
+  check(
+    "ui/friend-character-menu",
+    #characterMenu.items == 1 and characterMenu.items[1].value == "Player-2",
+    "friend character menu did not exclude non-selected characters"
+  )
+
+  check(
+    "injection/source-invalid",
+    not addon.Injection:SetCharacterSource("stranger#9999")
+      and addon.db.settings.selectedPeer == "friend#1234",
+    "invalid friend source changed the selection"
+  )
+  check(
+    "injection/source-mine",
+    addon.Injection:SetCharacterSource(nil)
+      and addon.db.settings.view == "mine"
+      and addon.db.settings.selectedPeer == nil
+      and AlterEgoDB.global.characters["Player-1"].enabled == true
+      and not AlterEgoDB.global.characters["Player-2"],
+    "own-character source did not restore the local view"
   )
 end
 
