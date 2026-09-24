@@ -310,9 +310,13 @@ end
 
 -- Sends an approved friend the fingerprint of every local character so they can
 -- request only the records that changed; deferred during a chat lockdown.
-function Protocol:SendIndex(peer)
+function Protocol:SendIndex(peer, fingerprints)
   if not peer or not peer.approved then
     return false, "friend is not approved"
+  end
+  local runtimePeer = peer.gameAccountID and peer or self:GetRuntimePeer(peer)
+  if not runtimePeer or not runtimePeer.online then
+    return false, "friend is offline"
   end
   local key = peer.key or Util:NormalizeBattleTag(peer.battleTag)
   if Transport:IsLockedDown() then
@@ -321,8 +325,11 @@ function Protocol:SendIndex(peer)
     end
     return false, "addon chat is locked down"
   end
-  local _, fingerprints = Snapshot:BuildOwn()
-  local sent, err = self:SendTo(peer, "INDEX", {
+  if not fingerprints then
+    local _
+    _, fingerprints = Snapshot:BuildOwn()
+  end
+  local sent, err = self:SendTo(runtimePeer, "INDEX", {
     fingerprints = fingerprints,
     alterEgoVersion = Util:GetAlterEgoVersion(),
     alterEgoDBVersion = Util:GetAlterEgoDBVersion(),
@@ -351,10 +358,14 @@ function Protocol:FlushPending()
 
   local index = self.pendingIndex
   self.pendingIndex = {}
+  local _, fingerprints
   for key in pairs(index) do
     local peer = addon.db.peers[key]
     if peer and peer.approved then
-      self:SendIndex(peer)
+      if not fingerprints then
+        _, fingerprints = Snapshot:BuildOwn()
+      end
+      self:SendIndex(peer, fingerprints)
     end
   end
 end
@@ -363,6 +374,10 @@ end
 -- capped at 200 records and queued at bulk priority.
 function Protocol:SendRequestedData(peer, guids)
   if not peer.approved or type(guids) ~= "table" then
+    return
+  end
+  local runtimePeer = peer.gameAccountID and peer or self:GetRuntimePeer(peer)
+  if not runtimePeer or not runtimePeer.online then
     return
   end
   local records, fingerprints = Snapshot:BuildOwn()
@@ -376,7 +391,7 @@ function Protocol:SendRequestedData(peer, guids)
       count = count + 1
     end
   end
-  self:SendTo(peer, "DATA", {
+  self:SendTo(runtimePeer, "DATA", {
     records = requestedRecords,
     fingerprints = requestedFingerprints,
     alterEgoDBVersion = Util:GetAlterEgoDBVersion(),
@@ -588,7 +603,7 @@ function Protocol:CheckForChanges(force)
   if changed then
     for _, peer in pairs(addon.db.peers) do
       if peer.approved then
-        self:SendIndex(peer)
+        self:SendIndex(peer, fingerprints)
       end
     end
   end
@@ -651,10 +666,11 @@ end
 -- sending ours, forcing a full round of reconciliation.
 function Protocol:SyncAll()
   self:RefreshFriends(false)
+  local _, fingerprints = Snapshot:BuildOwn()
   for _, peer in pairs(addon.db.peers) do
     if peer.approved then
       self:SendTo(peer, "SYNC", {}, "NORMAL")
-      self:SendIndex(peer)
+      self:SendIndex(peer, fingerprints)
     end
   end
 end

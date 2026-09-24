@@ -298,13 +298,18 @@ end
 
 -- Content hash of a record, ignoring local presentation fields that would cause false updates.
 function Snapshot:Fingerprint(record)
-  local fingerprintRecord = Util:CopySerializable(record)
-  -- These are local presentation/activity fields. AlterEgo rewrites order while
-  -- rendering and touches lastUpdate for unrelated events, so including either
-  -- would create false network updates.
-  fingerprintRecord.order = nil
-  fingerprintRecord.enabled = nil
-  fingerprintRecord.lastUpdate = nil
+  if type(record) ~= "table" then
+    return ""
+  end
+  -- Shallow copy the top level so we can omit local presentation/activity fields
+  -- without mutating the caller's record. Deep copying is unnecessary because
+  -- order, enabled, and lastUpdate are only top-level fields.
+  local fingerprintRecord = {}
+  for key, value in pairs(record) do
+    if key ~= "order" and key ~= "enabled" and key ~= "lastUpdate" then
+      fingerprintRecord[key] = value
+    end
+  end
   local serialized = self:SerializeStable(fingerprintRecord)
   return tostring(LibDeflate:Adler32(serialized)) .. ":" .. tostring(#serialized)
 end
